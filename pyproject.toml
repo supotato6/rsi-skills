@@ -1,0 +1,23 @@
+[build-system]
+requires = ["setuptools>=77", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "rsi-skills"
+version = "0.2.1"
+description = "Reusable RSI methods, whole-library snapshots and progressive loading"
+requires-python = ">=3.10"
+license = "MIT"
+
+[project.scripts]
+rsi-skills = "rsi_skills.scripts.skills:main"
+
+[tool.setuptools]
+packages = ["rsi_skills", "rsi_skills.scripts"]
+package-dir = {rsi_skills = "."}
+
+[tool.setuptools.package-data]
+rsi_skills = ["skills/**/*"]
+
+[tool.setuptools.exclude-package-data]
+rsi_skills = ["**/__pycache__/*", "**/*.pyc", "**/*.pyo"]

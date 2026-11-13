@@ -1,0 +1,3 @@
+# Only this owner can satisfy the required code-owner approval.
+# The wildcard also covers this file and all CI / governance files.
+* @aprilvkuo

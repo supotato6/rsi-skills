@@ -1,0 +1,58 @@
+name: RSI compatibility
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+    inputs:
+      agent_ref:
+        description: Candidate agent ref
+        default: main
+      workflow_ref:
+        description: Candidate workflow ref
+        default: main
+      skills_ref:
+        description: Candidate skills ref
+        default: main
+permissions:
+  contents: read
+jobs:
+  integration:
+    name: Integration (${{ matrix.mode }})
+    runs-on: ${{ fromJSON(vars.RSI_SKILLS_RUNNER || '"ubuntu-latest"') }}
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        mode: [pinned, candidate]
+    steps:
+      - name: Require cross-repository read access
+        env:
+          READ_TOKEN: ${{ secrets.RSI_REPO_READ_TOKEN }}
+        run: test -n "$READ_TOKEN" || { echo 'Configure RSI_REPO_READ_TOKEN with Contents read access to all four repositories'; exit 1; }
+      - name: Checkout shared compatibility implementation
+        uses: actions/checkout@v4
+        with:
+          repository: para-rsi/kaggle-auto
+          ref: dfb70f0deded4d532dd43647aa62faa270a6c51e
+          path: kaggle-auto
+          token: ${{ secrets.RSI_REPO_READ_TOKEN }}
+          persist-credentials: false
+      - uses: ./kaggle-auto/.github/actions/compatibility
+        with:
+          mode: ${{ matrix.mode }}
+          source-repository: ${{ github.repository }}
+          source-sha: ${{ github.event.pull_request.head.sha || github.sha }}
+          read-token: ${{ secrets.RSI_REPO_READ_TOKEN }}
+          agent-ref: ${{ inputs.agent_ref || 'main' }}
+          workflow-ref: ${{ inputs.workflow_ref || 'main' }}
+          skills-ref: ${{ inputs.skills_ref || 'main' }}
+  required:
+    name: RSI compatibility
+    if: always()
+    needs: integration
+    runs-on: ${{ fromJSON(vars.RSI_SKILLS_RUNNER || '"ubuntu-latest"') }}
+    steps:
+      - name: Require both integration combinations
+        env:
+          RESULT: ${{ needs.integration.result }}
+        run: test "$RESULT" = success
